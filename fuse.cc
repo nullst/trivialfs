@@ -83,12 +83,12 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     std::set<std::string> tags;
     std::copy(tags_vec.begin(), tags_vec.end(),
 	      std::inserter(tags, tags.begin()));
+    for(std::set<std::string>::iterator it = tags.begin(); it != tags.end(); ++it){
+      if(!disp.isTagDefined(*it)) return -ENOENT;
+    }
     dirs = directoryStructure(disp, tags);
   }
-  /* if there is no such tag for path */
-  if(dirs.second.empty()){
-    return -ENOENT;
-  }
+
   filler(buf, ".", NULL, 0);
   filler(buf, "..", NULL, 0);
   
