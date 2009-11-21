@@ -37,12 +37,17 @@ static int tri_getattr(const char *path, struct stat *st){
     is_directory = true;
   }else{
     std::vector<std::string> tags = splitPath(std::string(path));
-    filename = *tags.rbegin();
+    filename = tags.back();
+    tags.pop_back();
+
+    // now tags really is vectors of tags
+    // check it
+    for(std::vector<std::string>::iterator it = tags.begin(); it != tags.end(); ++it){
+      if(!disp.isTagDefined(*it)) return -ENOENT;
+    }
     
     /* there is no files and tags with the same names
        so when last element in path is tag, it's directory
-       Well, in fact I have to check whether all subdirs in path are tags
-       but I don't do it
     */
     if(disp.isTagDefined(filename)) is_directory = true;
     if(disp.isFileDefined(filename)) is_file = true;
@@ -109,9 +114,11 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int tri_open(const char *path, struct fuse_file_info *fi){
   std::vector<std::string> tags_vec = splitPath(std::string(path));
   std::set<std::string> tags;
-  std::copy(++tags_vec.rbegin(), tags_vec.rend(),
+  std::string filename = tags_vec.back();
+  tags_vec.pop_back();
+  std::copy(tags_vec.begin(), tags_vec.end(),
 	    std::inserter(tags, tags.begin()));
-  bool exist = doesFileExist(disp, tags, tags_vec[tags_vec.size() - 1]);
+  bool exist = doesFileExist(disp, tags, filename);
   if(!exist){
     return -ENOENT;
   }

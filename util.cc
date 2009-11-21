@@ -55,6 +55,7 @@ std::pair< std::set<std::string>, std::set<std::string> > directoryStructure(con
 }
 
 bool doesFileExist(const dispatcher& disp, std::set<std::string> tags, std::string filename){
+  if(!disp.isFileDefined(filename)) return false;
   std::set<std::string> filetags = disp.tagsOfFile(filename);
   return std::includes(filetags.begin(), filetags.end(),
 		       tags.begin(), tags.end());
@@ -76,3 +77,10 @@ void loadTags(dispatcher& disp, const std::string& path){
     }
   }
 }
+
+std::string extractFilename(std::vector<std::string>& v){
+  std::string filename = v.back();
+  v.pop_back();
+  return filename;
+}
+
