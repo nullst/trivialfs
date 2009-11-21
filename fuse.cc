@@ -16,30 +16,46 @@
 #include <algorithm>
 #include <functional>
 
+#include "dispatch.h"
+#include "util.h"
+#include "parser.h"
+
 std::string storage_path;
 static dispatcher disp;
+
+bool is_root(const char *path){
+  return (*path == '/') && (*(path + 1) == '\0');
+}
 
 static int tri_getattr(const char *path, struct stat *st){
   memset(st, 0, sizeof(struct stat));
 
-  std::vector<std::string> tags = splitPath(std::string(path));
-  const std::string& name = *tags.rbegin();
+  std::string filename;
   bool is_directory = false;
-  if(tags.empty()) is_directory = true;
-  /* there is no files and tags with the same names
-     so when last element in path is tag, it's directory
-     Well, in fact I have to check whether all subdirs in path are tags
-  */
-  if(disp.isTagDefined(name)) is_directory = true;
+  bool is_file = false;
+  if(is_root(path)){
+    is_directory = true;
+  }else{
+    std::vector<std::string> tags = splitPath(std::string(path));
+    filename = *tags.rbegin();
+    
+    /* there is no files and tags with the same names
+       so when last element in path is tag, it's directory
+       Well, in fact I have to check whether all subdirs in path are tags
+       but I don't do it
+    */
+    if(disp.isTagDefined(filename)) is_directory = true;
+    if(disp.isFileDefined(filename)) is_file = true;
+  }
   
   if(is_directory){
-    st->st_mode = S_IFDIR | 0700;
+    st->st_mode = S_IFDIR | 0775;
     st->st_nlink = 2;
-  }else if(disp.isFileDefined(name)){
+  }else if(is_file){
     st->st_mode = S_IFLNK | 0400;
-    st->st_nlink = 1;
+    st->st_nlink = 0;
     // +1 for '/' between storage path and filename
-    st->st_size = storage_path.size() + name.size() + 1;
+    st->st_size = storage_path.size() + filename.size() + 1;
   }else{
     /* there is no such file at all */
     return -ENOENT;
@@ -47,17 +63,31 @@ static int tri_getattr(const char *path, struct stat *st){
   return 0;
 }
 
+static int tri_opendir(const char *path, struct fuse_file_info *fi){
+  if(is_root(path)) return 0;
+  std::vector<std::string> tags = splitPath(std::string(path));
+  for(std::vector<std::string>::iterator it = tags.begin(); it != tags.end(); ++it){
+    if(!disp.isTagDefined(*it)) return -ENOENT;
+  }
+  return 0;
+}
+
 static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi){
-  std::vector<std::string> tags_vec = splitPath(std::string(path));
-  std::set<std::string> tags;
-  std::copy(tags_vec.begin(), tags_vec.end(),
-	    std::inserter(tags, tags.begin()));
-  std::pair< std::set<std::string>, std::set<std::string> > dirs = directoryStructure(disp, tags);
-  
+  std::pair< std::set<std::string>, std::set<std::string> > dirs;
+  if(is_root(path)){
+    dirs.first = disp.tags();
+    dirs.second = disp.files();
+  }else{ 
+    std::vector<std::string> tags_vec = splitPath(std::string(path));
+    std::set<std::string> tags;
+    std::copy(tags_vec.begin(), tags_vec.end(),
+	      std::inserter(tags, tags.begin()));
+    dirs = directoryStructure(disp, tags);
+  }
   /* if there is no such tag for path */
   if(dirs.second.empty()){
-    return -ENOINT;
+    return -ENOENT;
   }
   filler(buf, ".", NULL, 0);
   filler(buf, "..", NULL, 0);
@@ -107,14 +137,14 @@ static int tri_read(const char *path, char *buf, size_t size, off_t offset, stru
   return size;
 }
 
-static struct fuse_operations tri_operations = {
-  .getattr = tri_getattr,
-  .readdir = tri_readdir,
-  .open = tri_open,
-  .read = tri_read
-};
+static struct fuse_operations tri_operations;
 
 int main(int argc, char **argv){
+  tri_operations.getattr = tri_getattr;
+  tri_operations.opendir = tri_opendir;
+  tri_operations.readdir = tri_readdir;
+  tri_operations.open = tri_open;
+  tri_operations.read = tri_read;
   if(argc < 3){
     printf("Usage:\n"
 	   "trivialfs /path/to/storage /mount/point\n");
@@ -123,6 +153,7 @@ int main(int argc, char **argv){
   storage_path = std::string(argv[1]);
   loadTags(disp, storage_path + "/.tags");
   struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
+  fuse_opt_add_arg(&args, argv[0]);
   fuse_opt_add_arg(&args, argv[2]);
   return fuse_main(args.argc, args.argv, &tri_operations, NULL);
 }

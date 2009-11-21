@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "dispatch.h"
+#include "parser.h"
 #include "util.h"
 
 // path ("/a/f/sad/sdf")
