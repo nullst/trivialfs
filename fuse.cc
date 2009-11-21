@@ -169,7 +169,7 @@ int main(int argc, char **argv){
   }
   storage_path = std::string(argv[1]);
   // TODO:: use boost::string (starts_with)
-  if(storage_path.c_str[0] != '/'){
+  if(storage_path.c_str()[0] != '/'){
     fprintf(stderr, "Storage path must be absolute\n");
     exit(1);
   }
