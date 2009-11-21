@@ -11,31 +11,6 @@
 #include "parser.h"
 #include "util.h"
 
-// first part of result are subdirectories:
-//   for every file that has all specialized tags
-//   if it has another tag, there should be subdirectory called like this tag
-//   for example: if file1 has tags a, b, and c; file2 has b and c
-//   that in directory "/b" should be subdirs a and c
-//   and in "/b/c" should exist subdirectory "a" (in which only file1 will be)
-// second part of result is just intersection of given tags
-// using example upper, for directory "/b" it should be file1 and file2
-// while for directory "/a/b" and "/a" it will be file1
-std::pair< std::set<std::string>, std::set<std::string> > directoryStructure(const dispatcher& disp, std::set<std::string> tags){
-  if(tags.empty()){
-    // root directory: all files and all tags
-    std::set<std::string> files = disp.files();
-    std::set<std::string> subdirs = disp.tags();
-    return std::make_pair(subdirs, files);
-  }
-  std::set<std::string> files = disp.tagsIntersection(tags);
-  std::set<std::string> tags_union = disp.filesUnion(files);
-  std::set<std::string> subdirs;
-  std::set_difference(tags_union.begin(), tags_union.end(),
-		      tags.begin(), tags.end(),
-		      std::inserter(subdirs, subdirs.begin()));
-  return std::make_pair(subdirs, files);
-}
-
 struct printer
   : public std::binary_function<std::string, bool, void>
 {
