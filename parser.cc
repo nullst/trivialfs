@@ -23,7 +23,6 @@ parser::~parser(void){
 
 parser::tags parser::read_tags(void){
   tags t;
-  printf("DEBUG:: reading tags\n");
   skip_spaces();
   position token_start = p;
   while(true){
@@ -52,7 +51,6 @@ parser::name parser::read_name(void){
   while(*p != '{'){
     ++p;
   }
-  printf("DEBUG:: name skipped, %d characters\n", p - token_start);
   // this string is executed when *p == '{', which is not part of name
   n = cut_string(token_start, p - 1);
   ++p;
@@ -73,7 +71,6 @@ parser::config parser::read_all(void){
   
   sect = read_section();
   while(!is_eof()){
-    printf("DEBUG:: section readed\n");
     result.insert(sect);
     sect = read_section();
   }
@@ -81,9 +78,7 @@ parser::config parser::read_all(void){
 }
 
 void parser::skip_spaces(void){
-  position t = p;
   while(is_space(*p)) ++p;
-  printf("DEBUG:: skipped %d spaces\n", p - t);
 }
 parser::name parser::cut_string(parser::position st, parser::position fi){
   while(is_space(*st)) ++st;

@@ -98,6 +98,13 @@ public:
 
   dispatcher(void) : tags_(), files_(), file_relations_(), tag_relations_() { }
 
+  std::set<std::string> tags(void) const {
+    return tags_;
+  }
+  std::set<std::string> files(void) const {
+    return files_;
+  }
+  
   bool isTagDefined(const std::string& t) const {
     std::set<std::string>::iterator it = tags_.find(t);
     return it != tags_.end();
@@ -190,6 +197,12 @@ public:
 // using example upper, for directory "/b" it should be file1 and file2
 // while for directory "/a/b" and "/a" it will be file1
 std::pair< std::set<std::string>, std::set<std::string> > directoryStructure(const dispatcher& disp, std::set<std::string> tags){
+  if(tags.empty()){
+    // root directory: all files and all tags
+    std::set<std::string> files = disp.files();
+    std::set<std::string> subdirs = disp.tags();
+    return std::make_pair(subdirs, files);
+  }
   std::set<std::string> files = disp.tagsIntersection(tags);
   std::set<std::string> tags_union = disp.filesUnion(files);
   std::set<std::string> subdirs;
@@ -199,35 +212,19 @@ std::pair< std::set<std::string>, std::set<std::string> > directoryStructure(con
   return std::make_pair(subdirs, files);
 }
 
+struct printer
+  : public std::binary_function<std::string, bool, void>
+{
+  void operator() (const std::string& s, bool p) const{
+    std::printf("%s", s.c_str());
+    if(p) std::putchar('/');
+    std::putchar('\n');
+  }
+};
 
-int main(int, char**){
+int main(int argc, char** argv){
   dispatcher disp;
-  /*
-  disp.defineFile("Test.pdf");
-  disp.defineFile("Test2.pdf");
-  disp.defineFile("Additional library.djvu");
-  disp.defineFile("index.html");
 
-  disp.defineTag("c++");
-  disp.defineTag("book");
-  disp.defineTag("lisp");
-  disp.defineTag("classic");
-
-  disp.link("Test.pdf", "c++");
-  disp.link("Test.pdf", "book");
-  disp.link("Test2.pdf", "lisp");
-  disp.link("Test2.pdf", "book");
-  disp.link("Test2.pdf", "classic");
-  disp.link("Additional library.djvu", "classic");
-  disp.link("Additional library.djvu", "book");
-
-  std::set<std::string> files;
-  std::set<std::string> files_list;
-  files_list.insert("Test.pdf");
-  files_list.insert("Additional library.djvu");
-  files = disp.filesUnion(files_list);
-  std::copy(files.begin(), files.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
-  */
   std::printf("Trying to parse .tags\n");
   parser par("./.tags");
   parser::config conf = par.parse();
@@ -241,10 +238,29 @@ int main(int, char**){
       std::string tag(*tag_iter);
       disp.defineTag(tag);
       disp.link(name, tag);
-      //      std::printf("File '%s' linked with tag '%s'\n", name.c_str(), tag.c_str());
     }
   }
   std::printf(".tags loaded\n");
+
+  if(argc < 2){
+    std::printf("Run ./a.out /directory/like/described to test it contents\n");
+    std::exit(1);
+  }
+  std::pair< std::set<std::string>, std::string> path = splitPath(std::string(argv[1]));
+  std::set<std::string> tags(path.first);
+  tags.insert(path.second);
+  {
+    std::set<std::string>::iterator it = tags.find("");
+    if(it != tags.end()){
+      tags.erase(it);
+    }
+  }
+  std::pair< std::set<std::string>, std::set<std::string> > contents = directoryStructure(disp, tags);
+  
+  std::for_each(contents.first.begin(), contents.first.end(),
+		std::bind2nd(printer(), true));
+  std::for_each(contents.second.begin(), contents.second.end(),
+		std::bind2nd(printer(), false));
   
   return 0;
   /*
