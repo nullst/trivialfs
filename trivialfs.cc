@@ -256,18 +256,14 @@ int main(int argc, char** argv){
     }
   }
   std::pair< std::set<std::string>, std::set<std::string> > contents = directoryStructure(disp, tags);
-  
-  std::for_each(contents.first.begin(), contents.first.end(),
-		std::bind2nd(printer(), true));
-  std::for_each(contents.second.begin(), contents.second.end(),
-		std::bind2nd(printer(), false));
+  if(contents.second.empty()){
+    std::printf("No such path\n");
+  }else{
+    std::for_each(contents.first.begin(), contents.first.end(),
+		  std::bind2nd(printer(), true));
+    std::for_each(contents.second.begin(), contents.second.end(),
+		  std::bind2nd(printer(), false));
+  }
   
   return 0;
-  /*
-  std::pair<std::set<std::string>, std::string> p;
-  p = splitPath("/");
-  std::cout << "Tags are: " << std::endl;
-  std::copy(p.first.begin(), p.first.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
-  std::cout << "Name is " << p.second << std::endl;
-  */
 }
