@@ -1,5 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include <set>
 #include <utility>
@@ -8,17 +8,17 @@
 
 parser::parser(const std::string& path) : p(NULL), contents(NULL){
   FILE *f;
-  f = fopen(path.c_str(), "r");
+  f = std::fopen(path.c_str(), "r");
   if(f != NULL){
-    contents = (char *) malloc(200 * 1024);
-    int sz = fread(contents, 1, 200 * 1024, f);
+    contents = (char *) std::malloc(200 * 1024);
+    int sz = std::fread(contents, 1, 200 * 1024, f);
     contents[sz] = '\0';
-    fclose(f);
+    std::fclose(f);
   }
 }
 
 parser::~parser(void){
-  if(contents != NULL) free(contents);
+  if(contents != NULL) std::free(contents);
 }
 
 parser::tags parser::read_tags(void){

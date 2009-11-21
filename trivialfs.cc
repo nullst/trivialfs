@@ -25,20 +25,6 @@ int main(int argc, char** argv){
   dispatcher disp;
 
   std::printf("Trying to parse .tags\n");
-  parser par("./.tags");
-  parser::config conf = par.parse();
-  parser::config::iterator it = conf.begin();
-  for(; it != conf.end(); ++it){
-    parser::name name = it->first;
-    parser::tags tags = it->second;
-    disp.defineFile(name);
-    parser::tags::iterator tag_iter = tags.begin();
-    for(; tag_iter != tags.end(); ++tag_iter){
-      std::string tag(*tag_iter);
-      disp.defineTag(tag);
-      disp.link(name, tag);
-    }
-  }
   std::printf(".tags loaded\n");
 
   if(argc < 2){
