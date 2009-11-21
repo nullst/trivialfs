@@ -1,4 +1,5 @@
 #define FUSE_USE_VERSION 28
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +8,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <time.h>
 #include <fuse.h>
 #include <fuse_opt.h>
 
@@ -20,6 +22,7 @@
 #include "util.h"
 #include "parser.h"
 
+time_t mount_time;
 std::string storage_path;
 static dispatcher disp;
 
@@ -40,8 +43,7 @@ static int tri_getattr(const char *path, struct stat *st){
     filename = tags.back();
     tags.pop_back();
 
-    // now tags really is vectors of tags
-    // check it
+    // now tags should be really vector of valid tags
     for(std::vector<std::string>::iterator it = tags.begin(); it != tags.end(); ++it){
       if(!disp.isTagDefined(*it)) return -ENOENT;
     }
@@ -58,13 +60,21 @@ static int tri_getattr(const char *path, struct stat *st){
     st->st_nlink = 2;
   }else if(is_file){
     st->st_mode = S_IFLNK | 0400;
-    st->st_nlink = 0;
+    st->st_nlink = 1;
     // +1 for '/' between storage path and filename
     st->st_size = storage_path.size() + filename.size() + 1;
   }else{
     /* there is no such file at all */
     return -ENOENT;
   }
+  /* writing defaults */
+  struct fuse_context *cx = fuse_get_context();
+  st->st_uid = cx->uid;
+  st->st_gid = cx->gid;
+  
+  st->st_atime = mount_time;
+  st->st_mtime = mount_time;
+  st->st_ctime = mount_time;
   return 0;
 }
 
@@ -147,11 +157,15 @@ static int tri_read(const char *path, char *buf, size_t size, off_t offset, stru
 static struct fuse_operations tri_operations;
 
 int main(int argc, char **argv){
+
   tri_operations.getattr = tri_getattr;
   tri_operations.opendir = tri_opendir;
   tri_operations.readdir = tri_readdir;
   tri_operations.open = tri_open;
   tri_operations.read = tri_read;
+
+  mount_time = time(NULL);
+  
   if(argc < 3){
     printf("Usage:\n"
 	   "trivialfs /path/to/storage /mount/point\n");
