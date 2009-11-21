@@ -40,8 +40,7 @@ static int tri_getattr(const char *path, struct stat *st){
     is_directory = true;
   }else{
     std::vector<std::string> tags = splitPath(std::string(path));
-    filename = tags.back();
-    tags.pop_back();
+    filename = extractFilename(tags);
 
     // now tags should be really vector of valid tags
     for(std::vector<std::string>::iterator it = tags.begin(); it != tags.end(); ++it){
@@ -95,12 +94,12 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     dirs.second = disp.files();
   }else{ 
     std::vector<std::string> tags_vec = splitPath(std::string(path));
+    for(std::vector<std::string>::iterator it = tags_vec.begin(); it != tags_vec.end(); ++it){
+      if(!disp.isTagDefined(*it)) return -ENOENT;
+    }
     std::set<std::string> tags;
     std::copy(tags_vec.begin(), tags_vec.end(),
 	      std::inserter(tags, tags.begin()));
-    for(std::set<std::string>::iterator it = tags.begin(); it != tags.end(); ++it){
-      if(!disp.isTagDefined(*it)) return -ENOENT;
-    }
     dirs = directoryStructure(disp, tags);
   }
 
@@ -115,7 +114,7 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   }
   // files (symlinks)
   it = dirs.second.begin();
-  for(; it != dirs.second.begin(); ++it){
+  for(; it != dirs.second.end(); ++it){
     filler(buf, it->c_str(), NULL, 0);
   }
   return 0;
@@ -124,8 +123,7 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int tri_open(const char *path, struct fuse_file_info *fi){
   std::vector<std::string> tags_vec = splitPath(std::string(path));
   std::set<std::string> tags;
-  std::string filename = tags_vec.back();
-  tags_vec.pop_back();
+  std::string filename = extractFilename(tags_vec);
   std::copy(tags_vec.begin(), tags_vec.end(),
 	    std::inserter(tags, tags.begin()));
   bool exist = doesFileExist(disp, tags, filename);
@@ -140,18 +138,16 @@ static int tri_open(const char *path, struct fuse_file_info *fi){
   return 0;
 }
 
-static int tri_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi){
-  /* here I assume that if someone is reading file, he's opened it earlier
-     and there is no need to check existence of file
-  */
+static int tri_readlink(const char *path, char *buf, size_t size){
+
   std::string path_s(path);
-  std::string name = path_s.substr(path_s.find_last_of('/') + 1);
-  std::string contents = storage_path + "/" + name;
-  size_t sz = contents.size();
-  if(offset > sz) return 0;
-  if(offset + size > sz) size = sz - offset - 1;
-  memcpy(buf, contents.substr(offset, size).c_str(), size);
-  return size;
+  std::vector<std::string> path_v = splitPath(path_s);
+  std::string filename = extractFilename(path_v);
+  std::string contents = storage_path + "/" + filename;
+  // note: "+ 1" and "- 1" are here to include trailing '\0' byte
+  memcpy(buf, contents.c_str(),
+	 std::min(size, contents.size() + 1));
+  return 0;
 }
 
 static struct fuse_operations tri_operations;
@@ -162,7 +158,7 @@ int main(int argc, char **argv){
   tri_operations.opendir = tri_opendir;
   tri_operations.readdir = tri_readdir;
   tri_operations.open = tri_open;
-  tri_operations.read = tri_read;
+  tri_operations.readlink = tri_readlink;
 
   mount_time = time(NULL);
   
@@ -172,6 +168,11 @@ int main(int argc, char **argv){
     exit(1);
   }
   storage_path = std::string(argv[1]);
+  // TODO:: use boost::string (starts_with)
+  if(storage_path.c_str[0] != '/'){
+    fprintf(stderr, "Storage path must be absolute\n");
+    exit(1);
+  }
   loadTags(disp, storage_path + "/.tags");
   struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
   fuse_opt_add_arg(&args, argv[0]);

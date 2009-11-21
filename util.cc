@@ -11,8 +11,7 @@
 // path ("/a/f/sad/sdf")
 // is file "sdf" that is tagged as "a", "f", and "sad"
 std::vector<std::string> splitPath(const std::string& path){
-  // TODO: read about boost's string utilies
-  // (specifically about boost::split)
+  // TODO: use boost::string
 
   std::vector<std::string> result;
   // note: first character in string must be '/'
@@ -26,6 +25,7 @@ std::vector<std::string> splitPath(const std::string& path){
     }
     --current;
   }
+  std::reverse(result.begin(), result.end());
   return result;
 }
 
