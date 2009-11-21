@@ -9,29 +9,7 @@
 
 #include "dispatch.h"
 #include "parser.h"
-
-// path ("/a/f/sad/sdf")
-// is file "sdf" that is tagged as "a", "f", and "sad"
-std::pair< std::set<std::string>, std::string> splitPath(const std::string& path){
-  // TODO: read about boost's string utilies
-  // (specifically about boost::split)
-  std::set<std::string> tags;
-
-  const char* first = path.c_str();
-  const char* last = first + path.size();
-  const char* current = last;
-  while(*current != '/') --current;
-  std::string name(current + 1, last);
-  last = current--;
-  while(current >= first){
-    if(*current == '/'){
-      tags.insert(std::string(current + 1, last));
-      last = current;
-    }
-    --current;
-  }
-  return std::make_pair(tags, name);
-}
+#include "util.h"
 
 // first part of result are subdirectories:
 //   for every file that has all specialized tags
@@ -92,9 +70,9 @@ int main(int argc, char** argv){
     std::printf("Run ./a.out /directory/like/described to test it contents\n");
     std::exit(1);
   }
-  std::pair< std::set<std::string>, std::string> path = splitPath(std::string(argv[1]));
-  std::set<std::string> tags(path.first);
-  tags.insert(path.second);
+  std::vector<std::string> path = splitPath(std::string(argv[1]));
+  std::set<std::string> tags;
+  std::copy(path.begin(), path.end(), std::inserter(tags, tags.begin()));
   {
     std::set<std::string>::iterator it = tags.find("");
     if(it != tags.end()){
