@@ -29,11 +29,17 @@ def load_tags(path):
     f.close()
 
 def serialize_tags():
+    def list_unique(l):
+        checked = []
+        for e in l:
+            if e not in checked:
+                checked.append(e)
+        return checked
     s = ''
     for file in tags.keys():
         s += file
         s += ' { '
-        s += ", ".join(tags[file])
+        s += ", ".join(list_unique(tags[file]))
         s += ' }\n'
         pass
     return s
@@ -46,13 +52,13 @@ def store_tags(path):
 argc = len(sys.argv)
 
 if argc is 1 or argc > 3:
-    print """Usage:
+    print """
+Usage:
     trivialtags <name of file> [tag1, tag2, ...]
-
 When no tag is passed, current tags for file will be printed.
-If tag name starts with '-' this tag will be removed (if present) from file,
-   otherwise it'll be added to file
-    """
+When tag starts with character '-', appropriate tag will be extracted from file
+If entire tag name is '-' all tags of file will be removed (of course, it should be the only specialized tag)
+"""
     sys.exit(1)
 else:
     load_tags("./.tags")
@@ -71,7 +77,10 @@ elif argc is 3:
         tag = tag.strip();
         if tag[0] is '-':
             tag = tag[1:]
-            tags[name].remove(tag)
+            if tag is "":
+                del tags[name]
+            else:
+                tags[name].remove(tag)
         else:
             tags[name].append(tag)
         pass
