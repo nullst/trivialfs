@@ -23,7 +23,13 @@ def read_tags(tags_string):
     pass
 
 def load_tags(path):
-    f = open(path, 'r')
+    try:
+        f = open(path, 'r')
+    except(IOError):
+        # file does not exist
+        f = open(path, 'w')
+        f.close();
+        f = open(path, 'r')
     s = f.read()
     read_tags(s)
     f.close()
