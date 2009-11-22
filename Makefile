@@ -8,3 +8,9 @@ uninstall:
 	rm ${DESTDIR}/trivialfs ${DESTDIR}/trivialtags
 clean:
 	rm trivialfs
+dist:
+	mkdir -p /tmp/trivialfs
+	cp Makefile *.cc *.h trivialtags /tmp/trivialfs
+	PWD=`pwd`
+	(cd /tmp && tar czf ${PWD}/trivialfs.tar.gz trivialfs)
+	rm -rf /tmp/trivialfs
