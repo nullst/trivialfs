@@ -1,6 +1,5 @@
-HOare.pdf { math, logic }
-Introduction to Join.djvu { math, join calculus, book, fundamental }
-SICP.pdf { masterpiece, fundamental, fp, lisp }
-Funcional overview.html { fp, lisp, erlang, haskell, book }
 Beautiful Concurrency.pdf { fp, haskell, multiprocess }
-
+HOare.pdf { math, logic }
+Funcional overview.html { fp, lisp, erlang, haskell, book }
+Introduction to Join.djvu { math, join calculus, book, fundamental }
+SICP.pdf { masterpiece, fundamental, fp, lisp, zsh, amazing shit }

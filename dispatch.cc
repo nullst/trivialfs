@@ -5,6 +5,7 @@
 
 #include "dispatch.h"
 
+// this two functions are used like std::accumulate ones
 std::set<std::string> dispatcher::tagsIntersectionIter(std::set<std::string> sum, std::string current) const {
   std::set<std::string> current_set;
   std::set<std::string> result;

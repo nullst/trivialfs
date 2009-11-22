@@ -33,13 +33,15 @@ bool is_root(const char *path){
 static int tri_getattr(const char *path, struct stat *st){
   memset(st, 0, sizeof(struct stat));
 
+  // last element in path (it may be name of tag, actually)
   std::string filename;
   bool is_directory = false;
   bool is_file = false;
+  
   if(is_root(path)){
     is_directory = true;
   }else{
-    std::vector<std::string> tags = splitPath(std::string(path));
+    std::vector<std::string> tags = splitPath(path);
     filename = extractFilename(tags);
 
     // now tags should be really vector of valid tags
@@ -50,12 +52,15 @@ static int tri_getattr(const char *path, struct stat *st){
     /* there is no files and tags with the same names
        so when last element in path is tag, it's directory
     */
-    if(disp.isTagDefined(filename)) is_directory = true;
-    if(disp.isFileDefined(filename)) is_file = true;
+    if(disp.isTagDefined(filename)){
+      is_directory = true;
+    }else if(disp.isFileDefined(filename)){
+      is_file = true;
+    }
   }
   
   if(is_directory){
-    st->st_mode = S_IFDIR | 0775;
+    st->st_mode = S_IFDIR | 0700;
     st->st_nlink = 2;
   }else if(is_file){
     st->st_mode = S_IFLNK | 0400;
@@ -79,7 +84,8 @@ static int tri_getattr(const char *path, struct stat *st){
 
 static int tri_opendir(const char *path, struct fuse_file_info *fi){
   if(is_root(path)) return 0;
-  std::vector<std::string> tags = splitPath(std::string(path));
+  // all elements in path must be valid tags
+  std::vector<std::string> tags = splitPath(path);
   for(std::vector<std::string>::iterator it = tags.begin(); it != tags.end(); ++it){
     if(!disp.isTagDefined(*it)) return -ENOENT;
   }
@@ -93,7 +99,7 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     dirs.first = disp.tags();
     dirs.second = disp.files();
   }else{ 
-    std::vector<std::string> tags_vec = splitPath(std::string(path));
+    std::vector<std::string> tags_vec = splitPath(path);
     for(std::vector<std::string>::iterator it = tags_vec.begin(); it != tags_vec.end(); ++it){
       if(!disp.isTagDefined(*it)) return -ENOENT;
     }
@@ -121,11 +127,11 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 
 static int tri_open(const char *path, struct fuse_file_info *fi){
-  std::vector<std::string> tags_vec = splitPath(std::string(path));
-  std::set<std::string> tags;
+  std::vector<std::string> tags_vec = splitPath(path);
   std::string filename = extractFilename(tags_vec);
-  std::copy(tags_vec.begin(), tags_vec.end(),
-	    std::inserter(tags, tags.begin()));
+  std::set<std::string> tags(tags_vec.begin(), tags_vec.end());
+  //  std::copy(tags_vec.begin(), tags_vec.end(),
+  //	    std::inserter(tags, tags.begin()));
   bool exist = doesFileExist(disp, tags, filename);
   if(!exist){
     return -ENOENT;
@@ -140,8 +146,7 @@ static int tri_open(const char *path, struct fuse_file_info *fi){
 
 static int tri_readlink(const char *path, char *buf, size_t size){
 
-  std::string path_s(path);
-  std::vector<std::string> path_v = splitPath(path_s);
+  std::vector<std::string> path_v = splitPath(path);
   std::string filename = extractFilename(path_v);
   std::string contents = storage_path + "/" + filename;
   // note: "+ 1" and "- 1" are here to include trailing '\0' byte
@@ -167,6 +172,7 @@ int main(int argc, char **argv){
 	   "trivialfs /path/to/storage /mount/point\n");
     exit(1);
   }
+  
   storage_path = std::string(argv[1]);
   // TODO:: use boost::string (starts_with)
   if(storage_path.c_str()[0] != '/'){

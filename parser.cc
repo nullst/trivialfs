@@ -39,7 +39,7 @@ parser::tags parser::read_tags(void){
     token_start = p;
   }
   // skipping '}'
-  ++p;
+  if(!is_eof()) ++p;
   return t;
 }
 parser::name parser::read_name(void){

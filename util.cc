@@ -10,6 +10,7 @@
 
 // path ("/a/f/sad/sdf")
 // is file "sdf" that is tagged as "a", "f", and "sad"
+// note: there is inline wrapper for const char * defined in util.h
 std::vector<std::string> splitPath(const std::string& path){
   // TODO: use boost::string
 
