@@ -60,3 +60,10 @@ void dispatcher::link(const std::string& f, const std::string& t){
   file_relations_.insert(rel);
   tag_relations_.insert(rel);
 }
+
+void dispatcher::reset(void){
+  tags_.clear();
+  files_.clear();
+  file_relations_.clear();
+  tag_relations_.clear();
+}

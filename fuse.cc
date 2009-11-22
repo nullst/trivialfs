@@ -23,8 +23,18 @@
 #include "parser.h"
 
 time_t mount_time;
+uid_t uid;
+gid_t gid;
 std::string storage_path;
 static dispatcher disp;
+
+static void initDefaults(void){
+  disp.reset();
+  loadTags(disp, storage_path + "/.tags");
+  mount_time = time(NULL);
+  uid = getuid();
+  gid = getgid();
+}
 
 bool is_root(const char *path){
   return (*path == '/') && (*(path + 1) == '\0');
@@ -72,9 +82,8 @@ static int tri_getattr(const char *path, struct stat *st){
     return -ENOENT;
   }
   /* writing defaults */
-  struct fuse_context *cx = fuse_get_context();
-  st->st_uid = cx->uid;
-  st->st_gid = cx->gid;
+  st->st_uid = uid;
+  st->st_gid = gid;
   
   st->st_atime = mount_time;
   st->st_mtime = mount_time;
@@ -130,8 +139,6 @@ static int tri_open(const char *path, struct fuse_file_info *fi){
   std::vector<std::string> tags_vec = splitPath(path);
   std::string filename = extractFilename(tags_vec);
   std::set<std::string> tags(tags_vec.begin(), tags_vec.end());
-  //  std::copy(tags_vec.begin(), tags_vec.end(),
-  //	    std::inserter(tags, tags.begin()));
   bool exist = doesFileExist(disp, tags, filename);
   if(!exist){
     return -ENOENT;
@@ -155,6 +162,13 @@ static int tri_readlink(const char *path, char *buf, size_t size){
   return 0;
 }
 
+static int tri_create(const char *path, mode_t mode, struct fuse_file_info *fi){
+
+  if(std::string(path) == "/reload") initDefaults();
+  return -ENOENT;
+}
+
+
 static struct fuse_operations tri_operations;
 
 int main(int argc, char **argv){
@@ -164,9 +178,8 @@ int main(int argc, char **argv){
   tri_operations.readdir = tri_readdir;
   tri_operations.open = tri_open;
   tri_operations.readlink = tri_readlink;
+  tri_operations.create = tri_create;
 
-  mount_time = time(NULL);
-  
   if(argc < 3){
     printf("Usage:\n"
 	   "trivialfs /path/to/storage /mount/point\n");
@@ -179,7 +192,7 @@ int main(int argc, char **argv){
     fprintf(stderr, "Storage path must be absolute\n");
     exit(1);
   }
-  loadTags(disp, storage_path + "/.tags");
+  initDefaults();
   struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
   fuse_opt_add_arg(&args, argv[0]);
   fuse_opt_add_arg(&args, argv[2]);

@@ -111,6 +111,8 @@ public:
   void defineFile(const std::string& f);
   void defineTag(const std::string& t);
   void link(const std::string& f, const std::string& t);
+
+  void reset(void);
   
 };
 
