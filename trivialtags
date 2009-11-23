@@ -29,7 +29,7 @@ def load_tags(path):
         # file does not exist
         f = open(path, 'w')
         f.close();
-        f = open(path, 'r')
+        return
     s = f.read()
     read_tags(s)
     f.close()
