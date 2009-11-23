@@ -28,6 +28,14 @@ gid_t gid;
 std::string storage_path;
 static dispatcher disp;
 
+bool isFileReadable(std::string path){
+  FILE *f;
+  f = fopen(path.c_str(), "r");
+  if(f == NULL) return false;
+  fclose(f);
+  return true;
+}
+
 static void initDefaults(void){
   disp.reset();
   loadTags(disp, storage_path + "/.tags");
@@ -190,6 +198,10 @@ int main(int argc, char **argv){
   // TODO:: use boost::string (starts_with)
   if(storage_path.c_str()[0] != '/'){
     fprintf(stderr, "Storage path must be absolute\n");
+    exit(1);
+  }
+  if(!isFileReadable(storage_path + "/.tags")){
+    fprintf(stderr, "No .tags found in storage directory; use trivialtags to make initial taggings before mounting\n");
     exit(1);
   }
   initDefaults();
