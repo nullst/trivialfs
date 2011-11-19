@@ -30,36 +30,52 @@ std::vector<std::string> splitPath(const std::string& path){
   return result;
 }
 
-// first part of result are subdirectories:
-//   for every file that has all specialized tags
-//   if it has another tag, there should be subdirectory called like this tag
-//   for example: if file1 has tags a, b, and c; file2 has b and c
-//   that in directory "/b" should be subdirs a and c
-//   and in "/b/c" should exist subdirectory "a" (in which only file1 will be)
-// second part of result is just intersection of given tags
-// using example upper, for directory "/b" it should be file1 and file2
-// while for directory "/a/b" and "/a" it will be file1
-std::pair< std::set<std::string>, std::set<std::string> > directoryStructure(const dispatcher& disp, std::set<std::string> tags){
-  if(tags.empty()){
-    // root directory: all files and all tags
-    std::set<std::string> files = disp.files();
-    std::set<std::string> subdirs = disp.tags();
-    return std::make_pair(subdirs, files);
+// AN OVERVIEW OF FILESYSTEM STRUCTURE:
+// a directory is always a tag. Nested directories imply the intersection of tags.
+// for example, "/math/book/algebra" is a directory for files having all three tags
+// the order doesn't matter: "/algebra/book/math" will make no difference.
+// Hence if we look at "/algebra/book", there should be a subdirectory corresponding to tag
+// "math", if there files with all three tags (command-line completion is crucial).
+// Of course, if no file has tags "algebra"
+// and "economics" simultaneously, it makes no sense to create a subdirectory for "economics"
+// in "/algebra/book".
+// Summarizing, when the user browses the directory "/math/book", we need to provide:
+//   (a) files, ie. links to real files in the storage which are tagged with "math" and "book"
+//   (b) directories, which correspond to different tags with non-empty intersection with "math" and "book"
+// we return the structure of the current directory (passed as the list of tags) as bitmasks corresponding
+// to internal masks in dispatcher (the nth bit in the .first is set if and only if the nth tag should be presented,
+// similarly for the .second, which is the bitmask of files lying in the path.
+std::pair< std::vector<bool>, std::vector<bool> > directoryStructure(const dispatcher& disp, const std::vector<std::string>& tags){
+  std::vector<bool> tags_by_id = disp.convertTagsToIds(tags);
+  
+  std::vector<bool> filelist = disp.tagsIntersection(tags_by_id);
+  std::vector<bool> total_taglist = disp.filesUnion(filelist);
+
+  for(size_t i = 0; i < total_taglist.size(); ++i){
+    if(tags_by_id[i]) total_taglist[i] = false;
   }
-  std::set<std::string> files = disp.tagsIntersection(tags);
-  std::set<std::string> tags_union = disp.filesUnion(files);
-  std::set<std::string> subdirs;
-  std::set_difference(tags_union.begin(), tags_union.end(),
-		      tags.begin(), tags.end(),
-		      std::inserter(subdirs, subdirs.begin()));
-  return std::make_pair(subdirs, files);
+  return std::make_pair(total_taglist, filelist);
 }
 
-bool doesFileExist(const dispatcher& disp, std::set<std::string> tags, std::string filename){
+// std::pair< std::set<std::string>, std::set<std::string> > directoryStructure(const dispatcher& disp, std::vector<std::string> tags){
+//   if(tags.empty()){
+//     // root directory: all files and all tags
+//     std::set<std::string> files = disp.files();
+//     std::set<std::string> subdirs = disp.tags();
+//     return std::make_pair(subdirs, files);
+//   }
+//   std::set<std::string> files = disp.tagsIntersection(tags);
+//   std::set<std::string> tags_union = disp.filesUnion(files);
+//   std::set<std::string> subdirs;
+//   std::set_difference(tags_union.begin(), tags_union.end(),
+// 		      tags.begin(), tags.end(),
+// 		      std::inserter(subdirs, subdirs.begin()));
+//   return std::make_pair(subdirs, files);
+// }
+
+bool doesFileExist(const dispatcher& disp, const std::vector<std::string>& tags, const std::string& filename){
   if(!disp.isFileDefined(filename)) return false;
-  std::set<std::string> filetags = disp.tagsOfFile(filename);
-  return std::includes(filetags.begin(), filetags.end(),
-		       tags.begin(), tags.end());
+  return disp.hasTags(filename, tags);
 }
 
 void loadTags(dispatcher& disp, const std::string& path){

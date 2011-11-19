@@ -116,41 +116,40 @@ static int tri_opendir(const char *path, struct fuse_file_info *fi){
 
 static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi){
-  std::pair< std::set<std::string>, std::set<std::string> > dirs;
-  if(is_root(path)){
-    dirs.first = disp.tags();
-    dirs.second = disp.files();
-  }else{ 
-    std::vector<std::string> tags_vec = splitPath(path);
-    if(!disp.validTags(tags_vec)) return -ENOENT;
-
-    std::set<std::string> tags;
-    std::copy(tags_vec.begin(), tags_vec.end(),
-	      std::inserter(tags, tags.begin()));
-    dirs = directoryStructure(disp, tags);
-  }
-
+  // directories are always tags, files are always files
+  // so we will use a pair consisting of tags we are to show as subdirectories
+  // and files which lie in the current directory
+  // and we are going to keep the list by (internal to dispatcher) ids
+  // so dirs.first is a bool vector which has 'true' at nth place if the ith tag is
+  // to be shown
+  
+  std::vector<std::string> tags = splitPath(path);
+  if(!disp.validTags(tags)) return -ENOENT;
+  
+  std::pair< std::vector<bool>, std::vector<bool> > structure = directoryStructure(disp, tags);
+  std::vector<bool> dirs = structure.first;
+  std::vector<bool> files = structure.second;
+  
   filler(buf, ".", NULL, 0);
   filler(buf, "..", NULL, 0);
-  
-  std::set<std::string>::iterator it;
-  // directories (tags)
-  it = dirs.first.begin();
-  for(; it != dirs.first.end(); ++it){
-    filler(buf, it->c_str(), NULL, 0);
+
+  for(size_t i = 0; i < dirs.size(); ++i){
+    if(dirs[i]){
+      filler(buf, disp.filename(i).c_str(), NULL, 0);
+    }
   }
-  // files (symlinks)
-  it = dirs.second.begin();
-  for(; it != dirs.second.end(); ++it){
-    filler(buf, it->c_str(), NULL, 0);
+  for(size_t i = 0; i < files.size(); ++i){
+    if(files[i]){
+      filler(buf, disp.tagname(i).c_str(), NULL, 0);
+    }
   }
+
   return 0;
 }
 
 static int tri_open(const char *path, struct fuse_file_info *fi){
-  std::vector<std::string> tags_vec = splitPath(path);
-  std::string filename = extractFilename(tags_vec);
-  std::set<std::string> tags(tags_vec.begin(), tags_vec.end());
+  std::vector<std::string> tags = splitPath(path);
+  std::string filename = extractFilename(tags);
   bool exist = doesFileExist(disp, tags, filename);
   if(!exist){
     return -ENOENT;
