@@ -23,10 +23,13 @@ def read_tags(tags_string):
     pass
 
 def load_tags(path):
-    f = open(path, 'r')
-    s = f.read()
-    read_tags(s)
-    f.close()
+    try:
+        f = open(path, 'r')
+        s = f.read()
+        read_tags(s)
+        f.close()
+    except Exception as N:
+        return
 
 def serialize_tags():
     def list_unique(l):
