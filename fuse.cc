@@ -214,7 +214,8 @@ int main(int argc, char **argv){
   initDefaults();
   struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
   fuse_opt_add_arg(&args, argv[0]);
-  fuse_opt_add_arg(&args, "-f");
+  // enable this to debug
+  //  fuse_opt_add_arg(&args, "-f");
   fuse_opt_add_arg(&args, argv[2]);
   return fuse_main(args.argc, args.argv, &tri_operations, NULL);
 }
