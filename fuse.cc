@@ -69,16 +69,17 @@ static int tri_getattr(const char *path, struct stat *st){
     filename = extractFilename(tags);
 
     // now tags should be really vector of valid tags
-    if(!disp.validTags(tags)){
-      return -ENOENT;
-    }
     
     /* we assume there are no files and tags named the same
        so when last element in path is tag, it's directory
     */
     if(disp.isTagDefined(filename)){
+      if(!disp.validTags(tags)) return -ENOENT;
       is_directory = true;
     }else if(disp.isFileDefined(filename)){
+      if(!doesFileExist(disp, tags, filename)){
+	return -ENOENT;
+      }      
       is_file = true;
     }
   }
@@ -122,7 +123,7 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   // and we are going to keep the list by (internal to dispatcher) ids
   // so dirs.first is a bool vector which has 'true' at nth place if the ith tag is
   // to be shown
-  
+
   std::vector<std::string> tags = splitPath(path);
   if(!disp.validTags(tags)) return -ENOENT;
   
@@ -135,12 +136,12 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
   for(size_t i = 0; i < dirs.size(); ++i){
     if(dirs[i]){
-      filler(buf, disp.filename(i).c_str(), NULL, 0);
+      filler(buf, disp.tagname(i).c_str(), NULL, 0);
     }
   }
   for(size_t i = 0; i < files.size(); ++i){
     if(files[i]){
-      filler(buf, disp.tagname(i).c_str(), NULL, 0);
+      filler(buf, disp.filename(i).c_str(), NULL, 0);
     }
   }
 
@@ -166,6 +167,9 @@ static int tri_readlink(const char *path, char *buf, size_t size){
 
   std::vector<std::string> path_v = splitPath(path);
   std::string filename = extractFilename(path_v);
+  
+  if(!doesFileExist(disp, path_v, filename)) return -ENOENT;
+  
   std::string contents = storage_path + "/" + filename;
   // note: "+ 1" and "- 1" are here to include trailing '\0' byte
   memcpy(buf, contents.c_str(),
@@ -210,6 +214,7 @@ int main(int argc, char **argv){
   initDefaults();
   struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
   fuse_opt_add_arg(&args, argv[0]);
+  fuse_opt_add_arg(&args, "-f");
   fuse_opt_add_arg(&args, argv[2]);
   return fuse_main(args.argc, args.argv, &tri_operations, NULL);
 }

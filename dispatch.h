@@ -6,38 +6,7 @@
 #include <map>
 #include <functional>
 #include <vector>
-
-class relation
-{
-private:
-  std::string file_;
-  std::string tag_;
-
-public:
-  relation(void) : file_(), tag_() { }
-  relation(const std::string& f, const std::string& t) : file_(f), tag_(t) { }
-  const std::string& file(void) const { return file_; }
-  const std::string& tag(void) const { return tag_; }
-  
-  friend class file_ordering;
-  friend class tag_ordering;
-};
-
-struct file_ordering :
-  public std::binary_function<relation, relation, bool>
-{
-  bool operator() (const relation& r1, const relation& r2) const {
-    return r1.file_ < r2.file_;
-  }
-};
-
-struct tag_ordering :
-  public std::binary_function<relation, relation, bool>
-{
-  bool operator() (const relation& r1, const relation& r2) const {
-    return r1.tag_ < r2.tag_;
-  }
-};
+#include <stdio.h>
 
 class dispatcher
 {
@@ -126,7 +95,6 @@ public:
   // for converting a list of filenames to ids.
   std::vector<bool> convertTagsToIds(const std::vector<std::string>& tags) const {
     std::vector<bool> result(tags_count, false);
-
     for(size_t i = 0; i < tags.size(); ++i){
       result[ tags_ids.find(tags[i])->second ] = true;
     }
@@ -142,7 +110,7 @@ public:
     }
     return result;
   }
-    std::vector<bool> tagsIntersection(const std::vector<bool>& tags) const {
+  std::vector<bool> tagsIntersection(const std::vector<bool>& tags) const {
     std::vector<tagid> result;
     for(size_t i = 0; i < tags.size(); ++i){
       if(tags[i]) result.push_back(i);

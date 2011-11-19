@@ -28,6 +28,7 @@
 
 void dispatcher::defineFile(const std::string& f){
   if(isTagDefined(f)) return;
+  if(isFileDefined(f)) return;
   
   fileid id = (fileid) files_count;
   files_ids[f] = id;
@@ -44,6 +45,7 @@ void dispatcher::defineFile(const std::string& f){
 
 void dispatcher::defineTag(const std::string& t){
   if(isFileDefined(t)) return;
+  if(isTagDefined(t)) return;
 
   tagid id = (tagid) tags_count;
   tags_ids[t] = id;

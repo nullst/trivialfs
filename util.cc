@@ -4,6 +4,8 @@
 #include <utility>
 #include <algorithm>
 
+#include <stdio.h>
+
 #include "dispatch.h"
 #include "parser.h"
 #include "util.h"
@@ -18,7 +20,7 @@ std::vector<std::string> splitPath(const std::string& path){
   // note: first character in string must be '/'
   const char* first = path.c_str();
   const char* last = first + path.size();
-  const char* current = last;
+  const char* current = last - 1;
   while(current >= first){
     if(*current == '/'){
       result.push_back(std::string(current + 1, last));
@@ -27,6 +29,8 @@ std::vector<std::string> splitPath(const std::string& path){
     --current;
   }
   std::reverse(result.begin(), result.end());
+  // unfortunately, when the path is "/", we are left with an "empty" tag while there should be none
+  if((result.size() == 1 ) && (result[0].length() == 0)) result = std::vector<std::string>();
   return result;
 }
 
@@ -100,4 +104,3 @@ std::string extractFilename(std::vector<std::string>& v){
   v.pop_back();
   return filename;
 }
-
