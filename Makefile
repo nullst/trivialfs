@@ -1,11 +1,11 @@
-DESTDIR=/usr/bin
+DDIR=/usr/bin
 
 compile:
 	g++ $$(pkg-config --cflags --libs fuse) fuse.cc dispatch.cc parser.cc util.cc -o trivialfs
 install:
-	cp ./trivialfs ./trivialtags ${DESTDIR}
+	cp ./trivialfs ./trivialtags $(DESTDIR)$(DDIR)
 uninstall:
-	rm ${DESTDIR}/trivialfs ${DESTDIR}/trivialtags
+	rm $(DDIR)/trivialfs $(DDIR)/trivialtags
 clean:
 	rm trivialfs
 dist:

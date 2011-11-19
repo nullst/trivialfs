@@ -23,13 +23,7 @@ def read_tags(tags_string):
     pass
 
 def load_tags(path):
-    try:
-        f = open(path, 'r')
-    except(IOError):
-        # file does not exist
-        f = open(path, 'w')
-        f.close();
-        return
+    f = open(path, 'r')
     s = f.read()
     read_tags(s)
     f.close()
@@ -58,13 +52,12 @@ def store_tags(path):
 argc = len(sys.argv)
 
 if argc is 1 or argc > 3:
-    print """
+    print("""
 Usage:
     trivialtags <name of file> [tag1, tag2, ...]
 When no tag is passed, current tags for file will be printed.
 When tag starts with character '-', appropriate tag will be extracted from file
-If entire tag name is '-' all tags of file will be removed (of course, it should be the only specialized tag)
-"""
+If entire tag name is '-' all tags of file will be removed (of course, it should be the only specialized tag)""")
     sys.exit(1)
 else:
     load_tags("./.tags")
@@ -72,16 +65,16 @@ else:
 
 if argc is 2:
     if sys.argv[1] not in tags.keys():
-        print "File " + sys.argv[1] + " is not tagged"
+        print("File " + sys.argv[1] + " is not tagged")
     else:
-        print ", ".join(tags[sys.argv[1]])
+        print(", ".join(tags[sys.argv[1]]))
 elif argc is 3:
     name = sys.argv[1]
     if name not in tags.keys():
         tags[name] = []
     for tag in sys.argv[2].split(","):
         tag = tag.strip();
-        if tag[0] is '-':
+        if tag[0] == '-':
             tag = tag[1:]
             if tag is "":
                 del tags[name]
