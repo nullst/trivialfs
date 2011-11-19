@@ -4,6 +4,7 @@
 #include <string>
 #include <set>
 #include <functional>
+#include <vector>
 
 class relation
 {
@@ -68,6 +69,13 @@ public:
   bool isFileDefined(const std::string& f) const {
     std::set<std::string>::iterator it = files_.find(f);
     return it != files_.end();
+  }
+  bool validTags(const std::vector<std::string>& tags) const {
+    for(std::vector<std::string>::const_iterator it = tags.begin(); it != tags.end(); ++it){
+      if(!isTagDefined(*it)) return false;
+    }
+    return true;
+
   }
 
   std::set<std::string> filesWithTag(const std::string& t) const;

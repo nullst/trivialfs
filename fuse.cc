@@ -22,12 +22,18 @@
 #include "util.h"
 #include "parser.h"
 
+std::string storage_path;
+
+// neccessary attributes applied to all virtual files
 time_t mount_time;
 uid_t uid;
 gid_t gid;
-std::string storage_path;
+
+// dispatcher is an engine for all tag operations (intersections and so on)
 static dispatcher disp;
 
+// auxiliary function that's used only to check whether we can read .tags
+// in particular it checks whether file exists
 bool isFileReadable(std::string path){
   FILE *f;
   f = fopen(path.c_str(), "r");
@@ -63,11 +69,11 @@ static int tri_getattr(const char *path, struct stat *st){
     filename = extractFilename(tags);
 
     // now tags should be really vector of valid tags
-    for(std::vector<std::string>::iterator it = tags.begin(); it != tags.end(); ++it){
-      if(!disp.isTagDefined(*it)) return -ENOENT;
+    if(!disp.validTags(tags)){
+      return -ENOENT;
     }
     
-    /* there is no files and tags with the same names
+    /* we assume there are no files and tags named the same
        so when last element in path is tag, it's directory
     */
     if(disp.isTagDefined(filename)){
@@ -103,9 +109,8 @@ static int tri_opendir(const char *path, struct fuse_file_info *fi){
   if(is_root(path)) return 0;
   // all elements in path must be valid tags
   std::vector<std::string> tags = splitPath(path);
-  for(std::vector<std::string>::iterator it = tags.begin(); it != tags.end(); ++it){
-    if(!disp.isTagDefined(*it)) return -ENOENT;
-  }
+  if(!disp.validTags(tags)) return -ENOENT;
+
   return 0;
 }
 
@@ -117,9 +122,8 @@ static int tri_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     dirs.second = disp.files();
   }else{ 
     std::vector<std::string> tags_vec = splitPath(path);
-    for(std::vector<std::string>::iterator it = tags_vec.begin(); it != tags_vec.end(); ++it){
-      if(!disp.isTagDefined(*it)) return -ENOENT;
-    }
+    if(!disp.validTags(tags_vec)) return -ENOENT;
+
     std::set<std::string> tags;
     std::copy(tags_vec.begin(), tags_vec.end(),
 	      std::inserter(tags, tags.begin()));
