@@ -5,7 +5,7 @@ Introduction
 --
 This is a fuse-based virtual file system which allows use to attach tags to files and then navigate the tag cloud just like usual directories.
 
-Two principal limitations: you cannot tag directories, and all the files you wish to access through one mount point must reside in one "source" directory somewhere else. Or at least symlinks to them, which is still cumbersome.
+Two principal limitations: you cannot tag directories, and all the files you wish to access through one mount point must reside in one "source" directory somewhere else. Or at least symlinks to them, which is still cumbersome. This is ok if you are going to access the collection of papers or books, which was my primary purpose for trivialfs: you just never need to go to this directory.
 
 How it looks like
 --
