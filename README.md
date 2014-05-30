@@ -18,6 +18,13 @@ Subdirectories in trivialfs mounts are, as you may guess, more tags which could 
 
 It is impossible in current version to filter out files with tag `a` and not tag `b` beyond some `awk`/`sed` manipulations with lists of files: only intersections are supported.
 
+Files without tags could not be accessed through the mount point in any way. Also everything in trivialfs is read-only.
+
+You don't need to unmount and mount trivialfs manually if you added new tagged files or retagged already existing ones. Execute
+
+    touch ~/tags/reload
+to apply the changes on the fly. The success is indicated by returning "File not exists" error, which is not something you are going to get from `touch` (sorry for this). In more details, trying to create a file named "reload" in the directory you mounted trivialfs to (not inside some tags, so `~/tags/algebra/reload` will not work) leads to reparsing `.tags` file.
+
 How to tag files
 --
 First of all, you need a separate directory with all the files you are going to access through one mountpoint. Let's assume it's `~/info-storage`. The information about tags is contained will be contained in the file `.tags` there. It has a human-readable format, so you may just modify it as you with. It's usually more convenient to use the script `trivialtags` bundled together with trivialfs.
