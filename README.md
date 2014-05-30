@@ -9,8 +9,10 @@ Two principal limitations: you cannot tag directories, and all the files you wis
 
 How it looks like
 --
-Assume you mounted trivialfs to ~/tags.
+Assume you mounted trivialfs to `~/tags`.
+
     ls ~/tags/algebra/books
+
 will show you the list of all files which are tagged `algebra` and `books`. Similarly, `~/tags/algebra/books/finished` gives you all files with three tags, `algebra`, `books`, `finished`. The directory `~/tags/books/finished/algebra` is absolutely the same. **Do not use `find` on trivialfs directories!** It will do an exponential amount of work, treating all combinations of tags (which actually correspond to at least one file) as separate directories.
 
 Subdirectories in trivialfs mounts are, as you may guess, more tags which could be added to the list of tags (like `algebra` and `books` in the example) with at least one file having all the tags.
