@@ -49,7 +49,7 @@ How to mount
 If the directory with all the files and `.tags` is `~/source` and you wish to access them through `~/tags`, execute
 
     trivialfs ~/source ~/tags &
-(if you need to mount only if it's not mounted yet, use
+(if you need to mount only if it's not mounted yet, use something like
 
     (mount | grep -q $HOME/tags || trivialfs /mnt/files/info-storage $HOME/tags) &
 but you probably know this better than me)
